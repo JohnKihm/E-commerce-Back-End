@@ -62,7 +62,34 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   // update a tag's name by its `id` value
   try {
-    
+    const tag = await Tag.update(req.body, {
+      where: {
+        id: req.params.id,
+      }
+    });
+    if (req.body.productIds && req.body.productIds.length) {
+      const productTags = await ProductTag.findAll({
+        where: { tag_id: req.params.id }
+      });
+      // create filtered list of new tag_ids
+      const productTagIds = productTags.map(({ product_id }) => product_id);
+      const newProductTags = req.body.productIds
+      .filter((product_id) => !productTagIds.includes(product_id))
+      .map((product_id) => {
+        return {
+          product_id,
+          tag_id: req.params.id,
+        };
+      });
+      // figure out which ones to remove
+      const productTagsToRemove = productTags
+      .filter(({ product_id }) => !req.body.productIds.includes(product_id))
+      .map(({ id }) => id);
+      // run both actions
+      await ProductTag.destroy({ where: { id: productTagsToRemove } });
+      await ProductTag.bulkCreate(newProductTags);
+    }
+    res.json(tag);
   } catch (err) {
     res.status(500).json(err);
   }
