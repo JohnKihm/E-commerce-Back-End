@@ -64,7 +64,7 @@ router.put('/:id', async (req, res) => {
   try {
     const tag = await Tag.update(req.body, {
       where: {
-        id: req.params.id,
+        id: req.params.id
       }
     });
     if (req.body.productIds && req.body.productIds.length) {
